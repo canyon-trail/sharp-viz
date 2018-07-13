@@ -90,8 +90,9 @@ namespace SharpViz
         {
             switch(OS()) {
                 case PlatformID.Unix:
+                    return $"/usr/bin/{executable}";
                 case PlatformID.MacOSX:
-                    return String.Format("/usr/local/bin/{0}", executable);
+                    return $"/usr/local/bin/{executable}";
                 default:
                     return String.Format(@"C:\Program Files (x86)\Graphviz2.38\bin\{0}.exe", executable);
             }
