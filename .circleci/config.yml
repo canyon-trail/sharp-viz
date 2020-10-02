@@ -1,0 +1,45 @@
+version: 2.0
+jobs:
+  build:
+    docker:
+      - image: mcr.microsoft.com/dotnet/core/sdk:3.1
+    steps:
+      - checkout
+      - run:
+          name: Tests
+          command:
+            dotnet test SharpViz.Tests
+  publish:
+    docker:
+      - image: mcr.microsoft.com/dotnet/core/sdk:3.1
+    steps:
+      - checkout
+      - run:
+          name: Pack
+          command:
+            dotnet pack SharpViz -p:PackageVersion=$CIRCLE_TAG -p:Version=$CIRCLE_TAG -p:AssemblyVersion=$CIRCLE_TAG -o .
+      - run:
+          name: Publish
+          command:
+            dotnet nuget push SharpViz.${CIRCLE_TAG}.nupkg -k $NUGET_API_KEY -s https://api.nuget.org/v3/index.json
+
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build
+  publish:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /[0-9]+.[0-9]+.[0-9]+/
+            branches:
+              ignore: /.*/
+      - publish:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /[0-9]+.[0-9]+.[0-9]+/
