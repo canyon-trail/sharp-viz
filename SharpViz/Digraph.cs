@@ -18,7 +18,7 @@ namespace SharpViz
 
         private readonly List<string> _attributes = new List<string>();
 
-        private readonly List<Digraph> _clusters = new List<Digraph>();
+        private readonly Dictionary<string, Digraph> _clusters = new Dictionary<string, Digraph>();
 
         public Digraph()
         {
@@ -26,7 +26,7 @@ namespace SharpViz
         }
 
         public Node DefaultNode { get; }
-        
+
         public Digraph AddDefaultEdgeAttribute(string attr)
         {
             _defaultEdgeAttributes.Add(attr);
@@ -121,9 +121,13 @@ namespace SharpViz
             return this;
         }
 
-        public Digraph AddCluster(Digraph cluster)
+        public Digraph AddCluster(string key, Digraph cluster)
         {
-            _clusters.Add(cluster);
+            if(!key.StartsWith("cluster_"))
+            {
+                throw new ArgumentException("Cluster names must start with 'cluster_'");
+            }
+            _clusters[key] = cluster;
 
             return this;
         }
@@ -135,8 +139,8 @@ namespace SharpViz
 
         protected string RenderBody()
         {
-            var clusterContent = Enumerable.Range(0, _clusters.Count)
-                .Select(RenderCluster);
+            var clusterContent = _clusters
+                .Select(x => RenderCluster(x.Key, x.Value));
 
             return $@"{{
     {string.Join(";\n    ", _attributes)}
@@ -154,11 +158,9 @@ namespace SharpViz
 	}}";
         }
 
-        private string RenderCluster(int idx)
+        private string RenderCluster(string key, Digraph cluster)
         {
-            var cluster = _clusters[idx];
-
-            var contents = $"subgraph cluster_{idx} {cluster.RenderBody()}";
+            var contents = $"subgraph {key} {cluster.RenderBody()}";
 
             contents = contents.Replace(Environment.NewLine, Environment.NewLine + "    ");
 
